@@ -1,5 +1,3 @@
-# v1_bad_code.py
-
 class PrintedPublication:
     def __init__(self, title, author, pages, year):
         self.title = title
