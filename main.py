@@ -1,6 +1,25 @@
-# v1_bad_code.py
+from abc import ABC, abstractmethod
 
-class PrintedPublication:
+
+class IExportable(ABC):
+    @abstractmethod
+    def export_to_pdf(self) -> None:
+        pass
+
+
+class IPricable(ABC):
+    @abstractmethod
+    def calculate_cost(self) -> float:
+        pass
+
+
+class IAvailable(ABC):
+    @abstractmethod
+    def check_availability(self) -> bool:
+        pass
+
+
+class PrintedPublicationBase:
     def __init__(self, title, author, pages, year):
         self.title = title
         self.author = author
@@ -10,17 +29,8 @@ class PrintedPublication:
     def get_metadata(self):
         return f"{self.title}, {self.author}, {self.pages} стр., {self.year} г."
 
-    def export_to_pdf(self):
-        pass
 
-    def calculate_cost(self):
-        pass
-
-    def check_availability(self):
-        pass
-
-
-class Book(PrintedPublication):
+class Book(PrintedPublicationBase, IExportable, IPricable, IAvailable):
     def export_to_pdf(self):
         print(f"Экспорт книги '{self.title}' в PDF")
 
@@ -31,18 +41,12 @@ class Book(PrintedPublication):
         return True
 
 
-class Magazine(PrintedPublication):
-    def export_to_pdf(self):
-        raise NotImplementedError("Журналы не экспортируются в PDF")
-
-    def calculate_cost(self):
-        raise NotImplementedError("Для журналов стоимость не рассчитывается")
-
+class Magazine(PrintedPublicationBase, IAvailable):
     def check_availability(self):
         return False
 
 
-class Textbook(PrintedPublication):
+class Textbook(PrintedPublicationBase, IExportable, IPricable, IAvailable):
     def export_to_pdf(self):
         print(f"Экспорт учебника '{self.title}' в PDF с защитой")
 
@@ -55,38 +59,34 @@ class Textbook(PrintedPublication):
 
 class LibrarySystem:
     def __init__(self):
-        self.books = []
-        self.magazines = []
-        self.textbooks = []
+        self.items = []
 
     def add_item(self, item):
-        if isinstance(item, Book):
-            self.books.append(item)
-        elif isinstance(item, Magazine):
-            self.magazines.append(item)
-        elif isinstance(item, Textbook):
-            self.textbooks.append(item)
+        self.items.append(item)
 
-    def process_catalog(self):
-        print("\nОбработка каталога:")
-        
-        for b in self.books:
-            print(b.get_metadata())
-            b.export_to_pdf()
-            print(f"Стоимость: {b.calculate_cost()} руб.")
-            
-        for m in self.magazines:
-            print(m.get_metadata())
-            try:
-                m.export_to_pdf()
-                print(f"Стоимость: {m.calculate_cost()} руб.")
-            except NotImplementedError as e:
-                print(f"Ошибка: {e}")
-                
-        for t in self.textbooks:
-            print(t.get_metadata())
-            t.export_to_pdf()
-            print(f"Стоимость: {t.calculate_cost()} руб.")
+    def export_available_items(self):
+        print("\nЭкспорт доступных изданий:")
+        for item in self.items:
+            if isinstance(item, IExportable):
+                print(item.get_metadata())
+                item.export_to_pdf()
+
+    def calculate_total_cost(self):
+        print("\nРасчет стоимости:")
+        total = 0
+        for item in self.items:
+            if isinstance(item, IPricable):
+                cost = item.calculate_cost()
+                print(f"{item.get_metadata()}: {cost} руб.")
+                total += cost
+        print(f"Итого: {total} руб.")
+
+    def check_all_availability(self):
+        print("\nПроверка доступности:")
+        for item in self.items:
+            if isinstance(item, IAvailable):
+                status = "доступно" if item.check_availability() else "недоступно"
+                print(f"{item.get_metadata()}: {status}")
 
 
 def main():
@@ -94,7 +94,10 @@ def main():
     system.add_item(Book("Война и мир", "Толстой", 1200, 1869))
     system.add_item(Magazine("Vogue", "Редакция", 150, 2024))
     system.add_item(Textbook("Математика", "Пискунов", 500, 2020))
-    system.process_catalog()
+    
+    system.export_available_items()
+    system.calculate_total_cost()
+    system.check_all_availability()
 
 
 if __name__ == "__main__":
